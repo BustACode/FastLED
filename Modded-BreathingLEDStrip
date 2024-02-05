@@ -1,0 +1,63 @@
+/*
+https://thingpulse.com/breathing-leds-cracking-the-algorithm-behind-our-breathing-pattern/
+Set Info:
+https://github.com/FastLED/FastLED/wiki/RGBSet-Reference
+
+***The original had an annoying blackout at the end of a breath out. What I call 0-Bounce.
+   So I added a line that smooths this out.
+
+   The above article is very informative. And this algorithm is quite useful.
+   Thanks to the original author.
+   I use prefixes. Remove as needed.
+*/
+
+#include "FastLED.h"
+
+#define LEDTYPE WS2812B
+#define DATAPIN 2
+#define COLORORDER GRB
+#define VOLTS 5
+#define MAXPOWER 500
+#define BRIGHTNESS 128
+#define STRIPNUMLEDS 300
+#define RUNNUMLEDS 300
+
+#define SHORTRUN (0, 7) // Use if using a short set of LEDs
+#define FULLRUN (0, 299) // Full strip of LEDs
+
+#define STARTUPDELAY 3000
+
+CRGB BASELEDs[STRIPNUMLEDS]; // Primary FastLED LED ARRAY
+CRGBSet LEDs(BASELEDs, STRIPNUMLEDS); // Create clone of primary LED ARRAY
+CRGBSet LEDs1(LEDs FULLRUN); // Create sub-SET of LED ARRAY
+
+// CRGBArray<NUMLEDS> leds;
+
+
+void setup(){
+  delay(STARTUPDELAY);  // Startup delay
+  FastLED.addLeds<LEDTYPE, DATAPIN, COLORORDER>(BASELEDs, STRIPNUMLEDS).setCorrection( TypicalLEDStrip );
+  
+  // FastLED.setBrightness(BRIGHTNESS);
+  FastLED.setMaxPowerInVoltsAndMilliamps(VOLTS, MAXPOWER);
+  
+  LEDs = CRGB::Black; // All LEDs of strip off
+  FastLED.clear();
+  FastLED.show();
+}
+
+void loop(){
+  f_BreatheLEDs(CRGB::Red);
+}
+
+void f_BreatheLEDs(CRGB v_Color){
+  /* Breathing Algo.
+     Takes CRGB::Red
+     Outputs breating algo. in selected CRGB color to selected LEDs
+  */
+  uint8_t b8_Breath = (  exp( sin(millis() / 2000.0 * PI) ) - 0.368  ) * 42.546;
+  if(b8_Breath == 5){return;} // Smooths blackout 0-Bounce at end of breath out
+  FastLED.setBrightness(b8_Breath);
+  LEDs1 = v_Color;
+  FastLED.show();
+}
